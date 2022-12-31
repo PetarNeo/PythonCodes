@@ -1,0 +1,45 @@
+import datetime
+ulazna_datoteka = input("Ulazna datoteka: ")
+izlazna_datoteka = input("Izlazna datoteka: ")
+pocetni_datum = input("Poetni ddatum: ")
+krajnji_datum = input("Krajnji datum: ")
+podaci = []
+pocetni_datum = (pocetni_datum.replace("-", ""))
+krajnji_datum = (krajnji_datum.replace("-", ""))
+
+def obrada_kupaca(red):
+    podaci_u_listi = red.split(",")
+    ime = podaci_u_listi[0]
+    prezime = podaci_u_listi[1]
+    jmbg = podaci_u_listi[2]
+    potrosnja = float(podaci_u_listi[3])
+    datum = podaci_u_listi[4].replace("-", "")
+    datum_kupovine = datetime.date(int(datum[0:4]), int(datum[4:6]), int(datum[6:8]))
+    kupac = [ime, prezime, jmbg]
+    if datum_kupovine < datetime.date(int(pocetni_datum[0:4]),int(pocetni_datum[4:6]),int(pocetni_datum[6:8])) or datum_kupovine > datetime.date(int(krajnji_datum[0:4]),int(krajnji_datum[4:6]),int(krajnji_datum[6:8])):
+        potrosnja = float(0)
+        return "{} {} {} {}{}".format(ime, prezime, jmbg, potrosnja,"\n")
+    else:
+        return "{} {} {} {} {}{}".format(ime, prezime, jmbg, potrosnja,datum_kupovine,"\n")
+
+try:
+    prva_datoteka = open(ulazna_datoteka)
+    druga_datoteka = open(izlazna_datoteka, "w")
+except FileNotFoundError:
+    print("DAT GRESKA")
+else:
+    for red in prva_datoteka:
+        kupac = obrada_kupaca(red)
+        podaci.append(kupac)
+    i = 0
+    while i < len(podaci):
+        if podaci.count(podaci[i]) != 1:
+            podaci.remove(podaci[i])
+        else:
+            i += 1
+    sortirani_podaci = sorted(podaci)
+    for red in sortirani_podaci:
+        druga_datoteka.write(red)
+
+    prva_datoteka.close()
+    druga_datoteka.close()
