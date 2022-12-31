@@ -1,0 +1,90 @@
+ulaznaDatoteka, izlaznaDatoteka = input().split()
+ukupan_broj_mandata = int(input())                                           #Unost podataka
+niz_godina = input().split()
+
+def provera(fajl, godine):
+    konacna_provera_lista = []
+    for godina in godine:                                                #Jedna godina ce proci kroz svaki red i kada naleti na red
+        f = open(fajl)                                                   # u koji se nalazi u listu za godine stavljam True a ako ne False
+        for red in f:                                                    # Zatim tu listu raspakujem i smestam u drugoj listu, a ovu za godine resetujem na praznu
+            lista_za_godine = []                                         # da bi bila spremna za sledecu godinu
+            if godina in red.split("|")[0]:                              # Na kraju proveravam da li broj elemenata True se poklapa sa duzinom liste godina ako da vracam True
+                lista_za_godine.append(True)                             # a ako ne False
+            else:
+                lista_za_godine.append(False)
+            konacna_provera_lista.append(*lista_za_godine)
+        f.close()
+    if konacna_provera_lista.count(True) != len(godine):
+        return False
+    else:
+        return True
+
+def mandati(godina_i_rezultati_glasanja, broj_mandata):
+    svi_glasovi = 0
+    stranke = godina_i_rezultati_glasanja.split("|")                      # Svaki red odvojmo znakom |
+    godina = stranke[0]                                                   # Godina nam je prvi element u listi
+    stranke.remove(godina)                                                # Sklonimo prvi element godinu
+    for i in range(len(stranke)):
+        svi_glasovi += int(stranke[i])                                    # Zbir svih glasova
+    for i in range(len(stranke)):
+        if int(stranke[i]) <= svi_glasovi * 5 / 100:                      # Sve stranke koje imaju manje od 5%
+            stranke[i] = 0                                                # postavimo im vrednosi na 0
+    trenutni_mandati = list(stranke)
+    for i in range(len(trenutni_mandati)):                                # Trenutni mandati je lista sa svim 0
+        trenutni_mandati[i] = 0                                           # onoliko koliko ima clanova u stranci
+    while broj_mandata > 0:
+        i = 0
+        kolicnik_lista = []                                               # Pravim novu listu gde cu smestati kolicnike v/(1+s)
+        while i < len(stranke):
+            kolicnik = int(stranke[i]) / (trenutni_mandati[i] + 1)
+            kolicnik_lista.append(kolicnik)                               # Racunam kolicnke po formuli za svaku stranku
+            i += 1                                                        # onda ih stavljam u kolicnik listu
+        k = kolicnik_lista.index(
+            max(kolicnik_lista))                                          # Nalazim k koje predstaavlja na kojoj poziciji se nalazi najveci element u listi
+        trenutni_mandati[k] += 1                                          # Na istoj toj pozicji uvecam za 1 u listi trenutinh mandata
+        broj_mandata -= 1                                                 # Smanjimo broj mandata za 1 i tako dok ne stigne do 0
+    konacni_mandati_stranaka = " ".join(
+        [str(i) for i in trenutni_mandati])                               # formatiranje ispisa, sve pretvaram u string i da im razmak bude " ".
+    return "{} {}\n".format(godina, konacni_mandati_stranaka)
+
+def indeks_stranaka_sa_preko_50posto_mandata(godine, fajl, broj_mandata):
+    lista_indeksa_stranaka = []                                                                 #Nova lista za indekse
+    for godina in godine:
+        f = open(fajl)                                                                          #Otvaramo rezultate za citanje
+        for red in f:
+            if godina in red.split()[0]:                                                        #Ako je godina u redu kada ga splitujemo sa | i uzemo njegov 0.element sto predstavlja godinu
+                mandati_stranaka = red.split()[1::]                                             #Mandati su svi elementi reda sem prvog
+                mandati_stranaka = [int(i) for i in mandati_stranaka]                           #Konertujemo ih u int
+                najveci_broj_mandata = max(mandati_stranaka)                                    #Trazimo najveci broj mandata
+                if najveci_broj_mandata > broj_mandata / 2:
+                    lista_indeksa_stranaka.append(mandati_stranaka.index(najveci_broj_mandata)) #Ako je veci od 50% u listu indeksa dodajemo indeks najveceg elementa u listi mandati stranaka
+                else:
+                    lista_indeksa_stranaka.append(-1)                                           #Ako nema takvog najveceg elementa koji prelazi 50% dodaje u listu -1
+        f.close()                                                                               #Zatvaramo datoteku
+    return lista_indeksa_stranaka
+
+try:
+    provera_godina = provera(ulaznaDatoteka, niz_godina)
+    if provera_godina == False:
+        raise Exception
+
+    podaci_glasanja = open(ulaznaDatoteka)
+    rezultati_mandata = open(izlaznaDatoteka, "w")
+
+except FileNotFoundError:
+    print("DAT_GRESKA")                                                                         #Izbacuje gresku ako datoteka ne postoji
+except Exception:
+    print("GRESKA")                                                                             #Izbacuje gresku ako se godina ne nalazi u ulaznoj datoteci
+else:
+
+    for red in podaci_glasanja:                                                                 #Za svaki red u datoteci, taj red prosledimo
+        upis = mandati(red, ukupan_broj_mandata)                                                # u funkciju kao i ukupan broj mandata
+        rezultati_mandata.write(upis)
+
+    podaci_glasanja.close()
+    rezultati_mandata.close()                                                                   #Zatvaramo datoteke
+
+    stranke_sa_preko_50_posto_mandata = indeks_stranaka_sa_preko_50posto_mandata(niz_godina, izlaznaDatoteka,
+                                                                                 ukupan_broj_mandata)
+                                                                                                 #Funkcija koja nam vraca indeks stranke koja je imala preko 50% mandata u datoj godini, prosledimo joj fajl koji ima upisane mandate stranaka i broj mandata
+    print(*stranke_sa_preko_50_posto_mandata)                                                    #ispis indeksa stranaka
